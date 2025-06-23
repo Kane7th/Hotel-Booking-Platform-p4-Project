@@ -23,9 +23,11 @@ def create_app():
     from .routes import main
     from .auth_routes import auth
     from .booking_routes import booking
+    from .room_routes import room
     
     app.register_blueprint(booking)
     app.register_blueprint(main)
     app.register_blueprint(auth)
+    app.register_blueprint(room)
 
     return app

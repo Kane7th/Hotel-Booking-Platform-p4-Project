@@ -47,6 +47,14 @@ class Room(db.Model):
 
     bookings = relationship('Booking', back_populates='room', cascade='all, delete-orphan')
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'room_number': self.room_number,
+            'type': self.type,
+            'price': self.price,
+            'status': self.status
+    }
 
 class Booking(db.Model):
     __tablename__ = 'bookings'
