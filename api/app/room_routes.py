@@ -38,3 +38,33 @@ def create_room():
         'message': 'Room created successfully',
         'room': new_room.to_dict()
     }), 201
+
+# Update a room
+@room.route('/rooms/<int:id>', methods=['PATCH'])
+@jwt_required()
+def update_room(id):
+    room = Room.query.get(id)
+    if not room:
+        return jsonify({'error': 'Room not found'}), 404
+
+    data = request.get_json()
+    room.room_number = data.get('room_number', room.room_number)
+    room.type = data.get('type', room.type)
+    room.price = data.get('price', room.price)
+    room.status = data.get('status', room.status)
+
+    db.session.commit()
+    return jsonify({'message': 'Room updated successfully'}), 200
+
+
+# Delete a room
+@room.route('/rooms/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_room(id):
+    room = Room.query.get(id)
+    if not room:
+        return jsonify({'error': 'Room not found'}), 404
+    
+    db.session.delete(room)
+    db.session.commit()
+    return jsonify({'message': 'Room deleted successfully'}), 200
