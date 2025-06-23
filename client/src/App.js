@@ -1,14 +1,12 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import RoomList from './components/RoomList';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<RoomList />} />
-      </Routes>
-    </Router>
+    <div className="App">
+      <h1>Château Hotel Booking</h1>
+      <RoomList />
+    </div>
   );
 }
 

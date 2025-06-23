@@ -1,25 +1,35 @@
 import React, { useEffect, useState } from 'react';
-import API from '../api';
+import { getRooms } from '../api/rooms';
 
 const RoomList = () => {
   const [rooms, setRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    API.get('/rooms')
-      .then((res) => setRooms(res.data))
-      .catch((err) => console.error('Error fetching rooms:', err));
+    getRooms()
+      .then(setRooms)
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
   }, []);
 
+  if (loading) return <p>Loading rooms...</p>;
+  if (error) return <p>Error: {error}</p>;
+
   return (
-    <div className="p-4">
+    <div>
       <h2>Available Rooms</h2>
-      <ul>
-        {rooms.map((room) => (
-          <li key={room.id}>
-            <strong>Room {room.room_number}</strong> — {room.type} — ${room.price}
-          </li>
-        ))}
-      </ul>
+      {rooms.length ? (
+        <ul>
+          {rooms.map(room => (
+            <li key={room.id}>
+              Room #{room.room_number} - {room.type} - ${room.price} - {room.status}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No rooms available</p>
+      )}
     </div>
   );
 };
