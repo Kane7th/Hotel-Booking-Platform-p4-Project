@@ -24,10 +24,12 @@ def create_app():
     from .auth_routes import auth
     from .booking_routes import booking
     from .room_routes import room
+    from .customer_routes import customer 
     
     app.register_blueprint(booking)
     app.register_blueprint(main)
     app.register_blueprint(auth)
     app.register_blueprint(room)
+    app.register_blueprint(customer)
 
     return app
