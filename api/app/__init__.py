@@ -13,6 +13,7 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///hotel.db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'super-secret-key')
+    app.config['JWT_ERROR_MESSAGE_KEY'] = 'message'
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -21,7 +22,9 @@ def create_app():
 
     from .routes import main
     from .auth_routes import auth
-
+    from .booking_routes import booking
+    
+    app.register_blueprint(booking)
     app.register_blueprint(main)
     app.register_blueprint(auth)
 
