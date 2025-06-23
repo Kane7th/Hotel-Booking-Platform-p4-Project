@@ -20,9 +20,10 @@ class User(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
-            'email': self.email
+            'email': self.email,
+            'username': self.username
         }
-
+    
 
 class Customer(db.Model):
     __tablename__ = 'customers'
