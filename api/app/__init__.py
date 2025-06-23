@@ -25,11 +25,13 @@ def create_app():
     from .booking_routes import booking
     from .room_routes import room
     from .customer_routes import customer 
+    from .payment_routes import payment
     
     app.register_blueprint(booking)
     app.register_blueprint(main)
     app.register_blueprint(auth)
     app.register_blueprint(room)
     app.register_blueprint(customer)
+    app.register_blueprint(payment)
 
     return app
