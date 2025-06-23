@@ -10,6 +10,8 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
+    last_login = db.Column(db.DateTime)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -20,10 +22,11 @@ class User(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
+            'username': self.username,
             'email': self.email,
-            'username': self.username
+            'is_admin': self.is_admin,
+            'last_login': self.last_login.isoformat() if self.last_login else None
         }
-    
 
 class Customer(db.Model):
     __tablename__ = 'customers'
@@ -54,7 +57,7 @@ class Room(db.Model):
             'type': self.type,
             'price': self.price,
             'status': self.status
-    }
+        }
 
 class Booking(db.Model):
     __tablename__ = 'bookings'

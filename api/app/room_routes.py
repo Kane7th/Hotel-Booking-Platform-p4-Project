@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app.models import Room, db
 from flask_jwt_extended import jwt_required
+from app.utils.auth_helpers import admin_required
 
 room = Blueprint('room', __name__)
 
@@ -13,6 +14,7 @@ def get_rooms():
 # POST new room
 @room.route('/rooms', methods=['POST'])
 @jwt_required()
+@admin_required
 def create_room():
     data = request.get_json()
     room_number = data.get('room_number', '').strip()
@@ -42,6 +44,7 @@ def create_room():
 # Update a room
 @room.route('/rooms/<int:id>', methods=['PATCH'])
 @jwt_required()
+@admin_required
 def update_room(id):
     room = Room.query.get(id)
     if not room:
@@ -60,6 +63,7 @@ def update_room(id):
 # Delete a room
 @room.route('/rooms/<int:id>', methods=['DELETE'])
 @jwt_required()
+@admin_required
 def delete_room(id):
     room = Room.query.get(id)
     if not room:

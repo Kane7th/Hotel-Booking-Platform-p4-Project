@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models import Booking, Room, db
 from datetime import datetime
+from app.utils.auth_helpers import admin_required
 
 # Define the booking blueprint
 booking = Blueprint('booking', __name__)
@@ -63,6 +64,7 @@ def create_booking():
 # GET USER BOOKINGS
 @booking.route('/bookings', methods=['GET'])
 @jwt_required()
+@admin_required
 def get_user_bookings():
     user_id = int(get_jwt_identity())
     bookings = Booking.query.filter_by(customer_id=user_id).all()
@@ -82,6 +84,7 @@ def get_user_bookings():
 # GET ALL BOOKINGS FOR ADMIN/STAFF
 @booking.route('/all_bookings', methods=['GET'])
 @jwt_required()
+@admin_required
 def get_all_bookings():
     bookings = Booking.query.all()
 

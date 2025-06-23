@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from app.models import Payment, Booking, db
 from datetime import datetime
+from app.utils.auth_helpers import admin_required
 
 payment = Blueprint('payment', __name__)
 
@@ -10,6 +11,7 @@ payment = Blueprint('payment', __name__)
 # -------------------------
 @payment.route('/payments', methods=['GET'])
 @jwt_required()
+@admin_required
 def get_payments():
     payments = Payment.query.all()
     return jsonify([
@@ -27,6 +29,7 @@ def get_payments():
 # -------------------------
 @payment.route('/bookings/<int:booking_id>/payments', methods=['GET'])
 @jwt_required()
+@admin_required
 def get_payments_by_booking(booking_id):
     payments = Payment.query.filter_by(booking_id=booking_id).all()
     if not payments:
@@ -79,6 +82,7 @@ def create_payment():
 # -------------------------
 @payment.route('/payments/<int:id>', methods=['PATCH'])
 @jwt_required()
+@admin_required
 def update_payment(id):
     payment = Payment.query.get_or_404(id)
     data = request.get_json()
@@ -101,6 +105,7 @@ def update_payment(id):
 # -------------------------
 @payment.route('/payments/<int:id>', methods=['DELETE'])
 @jwt_required()
+@admin_required
 def delete_payment(id):
     payment = Payment.query.get_or_404(id)
     db.session.delete(payment)

@@ -1,12 +1,15 @@
 from flask import Blueprint, request, jsonify
 from app.models import Customer, db
 from flask_jwt_extended import jwt_required
+from app.utils.auth_helpers import admin_required
+
 
 customer = Blueprint('customer', __name__)
 
 # GET all customers
 @customer.route('/customers', methods=['GET'])
 @jwt_required()
+@admin_required
 def get_customers():
     customers = Customer.query.all()
     return jsonify([
