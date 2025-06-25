@@ -36,6 +36,9 @@ class Customer(db.Model):
     email = Column(String, nullable=False, unique=True)
     phone = Column(String, nullable=False)
 
+    user_id = Column(Integer, ForeignKey('users.id'), unique=True)
+    user = relationship('User', backref='customer', uselist=False)
+
     bookings = relationship('Booking', back_populates='customer', cascade='all, delete-orphan')
 
 

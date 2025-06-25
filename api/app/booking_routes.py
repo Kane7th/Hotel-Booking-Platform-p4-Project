@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models import Booking, Room, db
-from datetime import datetime
+from datetime import datetime, date
 from app.utils.auth_helpers import admin_required
 
 # Define the booking blueprint
@@ -10,11 +10,6 @@ booking = Blueprint('booking', __name__)
 # CREATE A NEW BOOKING
 @booking.route('/bookings', methods=['POST'])
 @jwt_required()
-
-def test_token():
-    user_id = get_jwt_identity()
-    return jsonify({'msg': f'You are logged in as user {user_id}'}), 200
-
 def create_booking():
     user_id = get_jwt_identity()
     data = request.get_json()
@@ -23,19 +18,16 @@ def create_booking():
     check_in_str = data.get('check_in')
     check_out_str = data.get('check_out')
 
-    # Validate date format
     try:
         check_in = datetime.strptime(check_in_str, '%Y-%m-%d').date()
         check_out = datetime.strptime(check_out_str, '%Y-%m-%d').date()
     except (TypeError, ValueError):
         return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
 
-    # Check room
     room = Room.query.get(room_id)
     if not room or room.status != 'available':
         return jsonify({'error': 'Room not available'}), 400
 
-    # Create booking
     new_booking = Booking(
         customer_id=user_id,
         room_id=room_id,
@@ -43,7 +35,6 @@ def create_booking():
         check_out=check_out
     )
 
-    # Update room status
     room.status = 'booked'
 
     db.session.add(new_booking)
@@ -60,15 +51,13 @@ def create_booking():
         }
     }), 201
 
-
 # GET USER BOOKINGS
 @booking.route('/bookings', methods=['GET'])
 @jwt_required()
-@admin_required
 def get_user_bookings():
     user_id = int(get_jwt_identity())
     bookings = Booking.query.filter_by(customer_id=user_id).all()
-    
+
     result = []
     for b in bookings:
         result.append({
@@ -78,7 +67,7 @@ def get_user_bookings():
             'check_out': b.check_out.isoformat(),
             'status': b.status
         })
-    
+
     return jsonify(result), 200
 
 # GET ALL BOOKINGS FOR ADMIN/STAFF
@@ -100,3 +89,77 @@ def get_all_bookings():
         })
 
     return jsonify(result), 200
+
+# CANCEL A BOOKING
+@booking.route('/bookings/<int:booking_id>/cancel', methods=['PATCH'])
+@jwt_required()
+def cancel_booking(booking_id):
+    user_id = int(get_jwt_identity())
+    booking = Booking.query.get(booking_id)
+
+    if not booking:
+        return jsonify({'error': 'Booking not found'}), 404
+
+    if booking.customer_id != user_id:
+        return jsonify({'error': 'Unauthorized: This booking is not yours'}), 403
+
+    if booking.check_in <= datetime.today().date():
+        return jsonify({'error': 'Too late to cancel: Check-in has already started or passed'}), 400
+
+    booking.status = 'cancelled'
+
+    if booking.room:
+        booking.room.status = 'available'
+
+    db.session.commit()
+
+    return jsonify({'message': 'Booking cancelled successfully'}), 200
+
+# BOOKING HISTORY WITH FILTERS, PAGINATION, DATES
+@booking.route('/bookings/history', methods=['GET'])
+@jwt_required()
+def get_booking_history():
+    user_id = int(get_jwt_identity())
+    query = Booking.query.join(Room).filter(Booking.customer_id == user_id)
+
+    room_type = request.args.get('type')
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 10))
+
+    if room_type:
+        query = query.filter(Room.type == room_type)
+
+    if start_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            query = query.filter(Booking.check_in >= start_date)
+        except ValueError:
+            return jsonify({'error': 'Invalid start_date format. Use YYYY-MM-DD'}), 400
+
+    if end_date_str:
+        try:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            query = query.filter(Booking.check_out <= end_date)
+        except ValueError:
+            return jsonify({'error': 'Invalid end_date format. Use YYYY-MM-DD'}), 400
+
+    paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+    bookings = paginated.items
+
+    return jsonify({
+        'total': paginated.total,
+        'pages': paginated.pages,
+        'current_page': page,
+        'bookings': [
+            {
+                'id': b.id,
+                'room_id': b.room_id,
+                'room_type': b.room.type,
+                'check_in': b.check_in.isoformat(),
+                'check_out': b.check_out.isoformat(),
+                'status': b.status
+            } for b in bookings
+        ]
+    }), 200

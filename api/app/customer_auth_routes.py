@@ -105,7 +105,6 @@ def get_all_customers():
 # Get one customer by ID
 @customer_auth.route('/customers/<int:id>', methods=['GET'])
 @jwt_required()
-@admin_required
 def get_customer_by_id(id):
     customer = Customer.query.get_or_404(id)
     return jsonify({
