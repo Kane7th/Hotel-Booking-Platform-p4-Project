@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function Login() {
+function Login({ setUser }) {
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -25,6 +25,7 @@ function Login() {
       if (!res.ok) throw new Error(data.error || "Login failed");
 
       localStorage.setItem("token", data.token);
+      setUser(data.user); // 👈 Update global user state
       navigate("/");
     } catch (err) {
       setError(err.message);

@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 
 import RoomList from './pages/RoomList';
 import RoomDetail from './pages/RoomDetail';
@@ -8,9 +8,34 @@ import Register from './pages/Register';
 import BookingPage from './pages/BookingPage';
 import MyBookings from './pages/MyBookings';
 import Home from './pages/Home';
-import { Link } from 'react-router-dom';
 
 function App() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch('/whoami', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (!data.error) {
+            setUser(data);
+          } else {
+            localStorage.removeItem('token');
+          }
+        });
+    }
+  }, []);
+
+  function handleLogout() {
+    localStorage.removeItem('token');
+    setUser(null);
+  }
+
   return (
     <Router>
       <div className="App">
@@ -18,18 +43,24 @@ function App() {
         <nav>
           <Link to="/">Home</Link>
           <Link to="/rooms">Rooms</Link>
-          <Link to="/bookings">My Bookings</Link>
-          <Link to="/login">Login</Link>
-          <Link to="/register">Register</Link>
+          {user && <Link to="/bookings">My Bookings</Link>}
+          {!user ? (
+            <>
+              <Link to="/login">Login</Link>
+              <Link to="/register">Register</Link>
+            </>
+          ) : (
+            <button onClick={handleLogout}>Logout</button>
+          )}
         </nav>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/rooms" element={<RoomList />} />
-          <Route path="/rooms/:id" element={<RoomDetail />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/bookings" element={<MyBookings />} />
-          <Route path="/book-room/:id" element={<BookingPage />} />
+          <Route path="/" element={<Home user={user} />} />
+          <Route path="/rooms" element={<RoomList user={user} />} />
+          <Route path="/rooms/:id" element={<RoomDetail user={user} />} />
+          <Route path="/login" element={<Login setUser={setUser} />} />
+          <Route path="/register" element={<Register setUser={setUser} />} />
+          <Route path="/bookings" element={<MyBookings user={user} />} />
+          <Route path="/book-room/:id" element={<BookingPage user={user} />} />
         </Routes>
       </div>
     </Router>

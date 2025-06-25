@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function Register() {
+function Register({ setUser }) {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -19,6 +19,7 @@ function Register() {
     setError('');
 
     try {
+      // Register the user
       const res = await fetch('/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -28,7 +29,22 @@ function Register() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to register');
 
-      navigate('/login');
+      // After successful registration, log them in
+      const loginRes = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: formData.username,
+          password: formData.password
+        })
+      });
+
+      const loginData = await loginRes.json();
+      if (!loginRes.ok) throw new Error(loginData.error || 'Auto-login failed');
+
+      localStorage.setItem('token', loginData.token);
+      setUser(loginData.user);
+      navigate('/');
     } catch (err) {
       setError(err.message);
     }
