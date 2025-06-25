@@ -39,6 +39,7 @@ def get_rooms():
 @room.route('/rooms/<int:id>', methods=['GET'])
 @jwt_required(optional=True)
 def get_room_by_id(id):
+    print("Looking for room ID:", id)  # TEMP DEBUG LINE
     room = Room.query.get(id)
     if not room:
         return jsonify({'error': 'Room not found'}), 404

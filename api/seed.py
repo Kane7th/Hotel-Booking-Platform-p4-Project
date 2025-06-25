@@ -1,7 +1,7 @@
 from faker import Faker
-from datetime import timedelta, date
+from datetime import timedelta
 from app import create_app, db
-from app.models import Customer, Room, Booking, Payment
+from app.models import Customer, Room, Booking, Payment, User
 from random import randint, choice, uniform
 from sqlalchemy.exc import IntegrityError
 
@@ -9,10 +9,25 @@ fake = Faker()
 app = create_app()
 
 with app.app_context():
+    print("🚨 Dropping and recreating all tables...")
     db.drop_all()
     db.create_all()
 
-    print("Seeding customers...")
+    print("🧼 Clearing existing data...")
+    Customer.query.delete()
+    Room.query.delete()
+    Booking.query.delete()
+    Payment.query.delete()
+    User.query.delete()
+
+    db.session.commit()
+
+    print("👤 Creating admin user...")
+    admin = User(username='admin', email='admin@example.com', is_admin=True)
+    admin.set_password('adminpass123')
+    db.session.add(admin)
+
+    print("👥 Seeding customers...")
     customers = []
     for _ in range(10):
         customer = Customer(
@@ -23,22 +38,22 @@ with app.app_context():
         db.session.add(customer)
         customers.append(customer)
 
-    print("Seeding rooms...")
+    print("🏨 Seeding rooms...")
     rooms = []
     for i in range(10):
         room = Room(
             room_number=str(100 + i),
             type=choice(['single', 'double', 'suite']),
             price=round(uniform(50.0, 250.0), 2),
-            status="available"
+            status='available'
         )
         db.session.add(room)
         rooms.append(room)
 
     db.session.commit()
 
-    print("Seeding bookings & payments...")
-    for i in range(5):
+    print("📆 Seeding bookings & payments...")
+    for _ in range(5):
         customer = choice(customers)
         room = choice(rooms)
 
@@ -53,7 +68,7 @@ with app.app_context():
             status=choice(['confirmed', 'checked-in', 'cancelled'])
         )
         db.session.add(booking)
-        db.session.flush()  # Grab booking.id
+        db.session.flush()  # Ensures booking.id is available
 
         payment = Payment(
             booking_id=booking.id,
@@ -65,7 +80,7 @@ with app.app_context():
 
     try:
         db.session.commit()
-        print("✅ Database seeded successfully.")
+        print("✅ Seeding complete! Admin: admin@example.com / adminpass123")
     except IntegrityError as e:
         db.session.rollback()
-        print("❌ Seeding failed due to duplicate or constraint error:", str(e))
+        print("❌ Seeding failed due to DB constraint:", str(e))
