@@ -75,6 +75,8 @@ class Booking(db.Model):
     customer = relationship('Customer', back_populates='bookings')
     room = relationship('Room', back_populates='bookings')
     payment = relationship('Payment', back_populates='booking', uselist=False, cascade='all, delete-orphan')
+    payment_method = db.Column(db.String, nullable=True)
+    payment_status = db.Column(db.String, default='pending')  # options: pending, paid, failed
 
 
 class Payment(db.Model):
