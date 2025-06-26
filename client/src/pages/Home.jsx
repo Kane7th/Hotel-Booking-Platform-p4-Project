@@ -20,6 +20,7 @@ function Home() {
             Authorization: `Bearer ${token}`,
           },
         });
+        console.log("JWT token in storage:", localStorage.getItem("token"));
 
         if (res.ok) {
           const data = await res.json();

@@ -2,35 +2,37 @@ import React, { useEffect, useState } from 'react';
 
 function MyBookings() {
   const [bookings, setBookings] = useState([]);
-  const [error, setError] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    const fetchBookings = async () => {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/my-bookings', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
 
-    fetch('/api/bookings', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => setBookings(data))
-      .catch(err => setError('Failed to load bookings.'));
+      if (res.ok) {
+        const data = await res.json();
+        setBookings(data);
+      }
+    };
+
+    fetchBookings();
   }, []);
 
   return (
     <div>
-      <h2>My Bookings</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {bookings.length === 0 ? (
-        <p>No bookings found.</p>
-      ) : (
-        <ul>
-          {bookings.map(b => (
-            <li key={b.id}>
-              Room #{b.room_id} — {b.check_in} to {b.check_out} — <strong>{b.status}</strong>
-            </li>
-          ))}
-        </ul>
-      )}
+      <h2>🧾 My Bookings</h2>
+      {bookings.map(b => (
+        <div key={b.id} style={{ border: '1px solid #ccc', margin: '10px', padding: '10px' }}>
+          <p><strong>Room:</strong> {b.room.number} ({b.room.type})</p>
+          <p><strong>Check-in:</strong> {b.check_in}</p>
+          <p><strong>Check-out:</strong> {b.check_out}</p>
+          <p><strong>Status:</strong> {b.status}</p>
+          <p><strong>Payment:</strong> {b.payment_status} via {b.payment_method || 'N/A'}</p>
+        </div>
+      ))}
     </div>
   );
 }

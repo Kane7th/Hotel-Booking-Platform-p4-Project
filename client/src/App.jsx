@@ -1,38 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 
-import RoomList from './pages/RoomList';
-import RoomDetail from './pages/RoomDetail';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import BookingPage from './pages/BookingPage';
-import MyBookings from './pages/MyBookings';
-import Home from './pages/Home';
+import RoomList from "./pages/RoomList";
+import RoomDetail from "./pages/RoomDetail";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import BookingPage from "./pages/BookingPage";
+import BookingsListPage from "./pages/BookingsListPage";
+import MyBookings from "./pages/MyBookings";
+import Home from "./pages/Home";
 
 function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token) {
-      fetch('/whoami', {
+      fetch("/whoami", {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       })
-        .then(res => res.json())
-        .then(data => {
+        .then((res) => res.json())
+        .then((data) => {
           if (!data.error) {
             setUser(data);
           } else {
-            localStorage.removeItem('token');
+            localStorage.removeItem("token");
           }
         });
     }
   }, []);
 
   function handleLogout() {
-    localStorage.removeItem('token');
+    localStorage.removeItem("token");
     setUser(null);
   }
 
@@ -60,7 +61,8 @@ function App() {
           <Route path="/login" element={<Login setUser={setUser} />} />
           <Route path="/register" element={<Register setUser={setUser} />} />
           <Route path="/bookings" element={<MyBookings user={user} />} />
-          <Route path="/book-room/:id" element={<BookingPage user={user} />} />
+          <Route path="/rooms/:id/book" element={<BookingPage />} />
+          <Route path="/bookings" element={<BookingsListPage />} />
         </Routes>
       </div>
     </Router>

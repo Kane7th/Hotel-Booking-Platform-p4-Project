@@ -10,7 +10,6 @@ auth = Blueprint('auth', __name__)
 # REGISTER NEW USER
 @auth.route('/register', methods=['POST'])
 def register():
-    """Register a new user account."""
     try:
         data = request.get_json()
         username = data.get('username')
@@ -36,17 +35,6 @@ def register():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# GET USER PROFILE
-@auth.route('/profile', methods=['GET'])
-@jwt_required()
-def profile():
-    """Fetch logged-in user's profile."""
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-    return jsonify(user.to_dict()), 200
-
 # LOGIN AND GET JWT TOKEN
 @auth.route('/login', methods=['POST'])
 def login():
@@ -63,7 +51,7 @@ def login():
         user.last_login = datetime.utcnow()
         db.session.commit()
 
-        token = create_access_token(identity=user.id)
+        token = create_access_token(identity=str(user.id))  # Identity must be a string
         return jsonify({
             'token': token,
             'user': user.to_dict()
@@ -71,20 +59,27 @@ def login():
 
     return jsonify({'error': 'Invalid credentials'}), 401
 
+# GET USER PROFILE
+@auth.route('/profile', methods=['GET'])
+@jwt_required()
+def profile():
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    return jsonify(user.to_dict()), 200
+
 # LOGOUT USER
 @auth.route('/logout', methods=['POST'])
 @jwt_required()
 def logout():
-    """Logout a user by invalidating their JWT."""
-    # Invalidate the token by not storing it in a blacklist or similar mechanism
     return jsonify({'message': 'Successfully logged out'}), 200
 
-# CHANGE USER PASSWORD
+# CHANGE PASSWORD
 @auth.route('/change-password', methods=['PATCH'])
 @jwt_required()
 def change_password():
-    """Change the logged-in user's password."""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
 
     if not user:
@@ -105,12 +100,11 @@ def change_password():
 
     return jsonify({'message': 'Password changed successfully'}), 200
 
-# CHECK IF LOGGED-IN USER IS ADMIN
+# WHOAMI ROUTE
 @auth.route('/whoami', methods=['GET'])
 @jwt_required()
 def whoami():
-    """Return current user's identity and admin status."""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
 
     if not user:
@@ -122,17 +116,14 @@ def whoami():
         'is_admin': user.is_admin
     }), 200
 
-# PROMOTE USER TO ADMIN
+# PROMOTE TO ADMIN
 @auth.route('/admin/promote/<int:user_id>', methods=['PATCH'])
 @jwt_required()
 @admin_required
 def promote_to_admin(user_id):
-    """Grant admin rights to a user."""
     user = User.query.get(user_id)
-
     if not user:
         return jsonify({'error': 'User not found'}), 404
-
     if user.is_admin:
         return jsonify({'message': f'{user.username} is already an admin'}), 200
 
@@ -144,17 +135,14 @@ def promote_to_admin(user_id):
         'user': user.to_dict()
     }), 200
 
-# DEMOTE USER FROM ADMIN
+# DEMOTE FROM ADMIN
 @auth.route('/admin/demote/<int:user_id>', methods=['PATCH'])
 @jwt_required()
 @admin_required
 def demote_from_admin(user_id):
-    """Remove admin rights from a user."""
     user = User.query.get(user_id)
-
     if not user:
         return jsonify({'error': 'User not found'}), 404
-
     if not user.is_admin:
         return jsonify({'message': f'{user.username} is not an admin'}), 200
 
@@ -165,3 +153,9 @@ def demote_from_admin(user_id):
         'message': f'{user.username} has been demoted from admin',
         'user': user.to_dict()
     }), 200
+
+# TOKEN TEST
+@auth.route('/test-token')
+@jwt_required()
+def test_token():
+    return jsonify({"message": "Token is valid"}), 200

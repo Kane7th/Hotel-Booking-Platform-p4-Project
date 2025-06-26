@@ -9,50 +9,38 @@ payment = Blueprint('payment', __name__)
 # -------------------------
 # USER: Make a Payment for a Booking
 # -------------------------
-@payment.route('/payments', methods=['POST'])
+@payment.route('/pay/<int:booking_id>', methods=['POST'])
 @jwt_required()
-def make_payment():
+def pay_for_booking(booking_id):
     user_id = int(get_jwt_identity())
+    
+    booking = Booking.query.get(booking_id)
+    if not booking or booking.customer.user_id != user_id:
+        return jsonify({"error": "Booking not found or unauthorized"}), 403
+
+    if booking.payment_status == "paid":
+        return jsonify({"message": "Booking already paid"}), 200
+
     data = request.get_json()
-    booking_id = data.get('booking_id')
     method = data.get('method')
 
-    if not booking_id or not method:
-        return jsonify({'error': 'Booking ID and payment method are required'}), 400
+    if not method:
+        return jsonify({"error": "Payment method required"}), 400
 
-    booking = Booking.query.get(booking_id)
-
-    if not booking:
-        return jsonify({'error': 'Booking not found'}), 404
-
-    if booking.customer_id != user_id:
-        return jsonify({'error': 'Unauthorized: Not your booking'}), 403
-
-    if booking.status != 'confirmed':
-        return jsonify({'error': 'Only confirmed bookings can be paid for'}), 400
-
-    if booking.payment:
-        return jsonify({'error': 'Payment already exists for this booking'}), 409
-
+    # Create payment record
     payment = Payment(
         booking_id=booking.id,
-        amount=booking.room.price,
+        amount=booking.room.price * (booking.check_out - booking.check_in).days,
         payment_date=date.today(),
         method=method
     )
+    booking.payment_status = "paid"
+    booking.payment_method = method
 
     db.session.add(payment)
     db.session.commit()
 
-    return jsonify({
-        'message': 'Payment successful',
-        'payment': {
-            'booking_id': booking.id,
-            'amount': payment.amount,
-            'method': payment.method,
-            'payment_date': payment.payment_date.isoformat()
-        }
-    }), 201
+    return jsonify({"message": "Payment successful!"}), 200
 
 # -------------------------
 # ADMIN: Get All Payments

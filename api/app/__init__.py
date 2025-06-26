@@ -30,11 +30,13 @@ def create_app():
 
     # JWT error handlers
     @jwt.unauthorized_loader
-    def handle_missing_token(err):
+    def handle_missing_token(reason):
+        print("🔥 Unauthorized access:", reason)
         return jsonify({"error": "Missing token"}), 401
 
     @jwt.invalid_token_loader
-    def handle_invalid_token(err):
+    def handle_invalid_token(reason):
+        print("🔥 Invalid token:", reason)
         return jsonify({"error": "Invalid token"}), 422
 
     @jwt.expired_token_loader

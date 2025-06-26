@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.models import Booking, Room, db
+from app.models import Booking, Room, Customer, db
 from datetime import datetime
 from app.utils.auth_helpers import admin_required
 
@@ -10,11 +10,15 @@ booking = Blueprint('booking', __name__)
 @booking.route('/bookings', methods=['POST'])
 @jwt_required()
 def create_booking():
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     data = request.get_json()
     room_id = data.get('room_id')
     check_in_str = data.get('check_in')
     check_out_str = data.get('check_out')
+
+    customer = Customer.query.filter_by(user_id=user_id).first()
+    if not customer:
+        return jsonify({'error': 'Customer profile not found'}), 404
 
     try:
         check_in = datetime.strptime(check_in_str, '%Y-%m-%d').date()
@@ -27,7 +31,7 @@ def create_booking():
         return jsonify({'error': 'Room not available'}), 400
 
     new_booking = Booking(
-        customer_id=user_id,
+        customer_id=customer.id,
         room_id=room_id,
         check_in=check_in,
         check_out=check_out
@@ -49,13 +53,16 @@ def create_booking():
         }
     }), 201
 
-
 # GET USER BOOKINGS
 @booking.route('/bookings', methods=['GET'])
 @jwt_required()
 def get_user_bookings():
     user_id = int(get_jwt_identity())
-    bookings = Booking.query.filter_by(customer_id=user_id).all()
+    customer = Customer.query.filter_by(user_id=user_id).first()
+    if not customer:
+        return jsonify({'error': 'Customer not found'}), 404
+
+    bookings = Booking.query.filter_by(customer_id=customer.id).all()
     return jsonify([
         {
             'id': b.id,
@@ -65,39 +72,21 @@ def get_user_bookings():
             'status': b.status
         } for b in bookings
     ]), 200
-
-
-# GET ALL BOOKINGS FOR ADMIN
-@booking.route('/all_bookings', methods=['GET'])
-@jwt_required()
-@admin_required
-def get_all_bookings():
-    bookings = Booking.query.all()
-    return jsonify([
-        {
-            'id': b.id,
-            'customer_id': b.customer_id,
-            'room_id': b.room_id,
-            'check_in': b.check_in.isoformat(),
-            'check_out': b.check_out.isoformat(),
-            'status': b.status
-        } for b in bookings
-    ]), 200
-
 
 # CANCEL BOOKING
 @booking.route('/bookings/<int:booking_id>/cancel', methods=['PATCH'])
 @jwt_required()
 def cancel_booking(booking_id):
     user_id = int(get_jwt_identity())
+    customer = Customer.query.filter_by(user_id=user_id).first()
     booking = Booking.query.get(booking_id)
 
     if not booking:
         return jsonify({'error': 'Booking not found'}), 404
-    if booking.customer_id != user_id:
-        return jsonify({'error': 'Unauthorized: This booking is not yours'}), 403
+    if not customer or booking.customer_id != customer.id:
+        return jsonify({'error': 'Unauthorized'}), 403
     if booking.check_in <= datetime.today().date():
-        return jsonify({'error': 'Too late to cancel: Check-in has already started or passed'}), 400
+        return jsonify({'error': 'Too late to cancel'}), 400
 
     booking.status = 'cancelled'
     if booking.room:
@@ -106,13 +95,16 @@ def cancel_booking(booking_id):
     db.session.commit()
     return jsonify({'message': 'Booking cancelled successfully'}), 200
 
-
-# GET BOOKING HISTORY WITH FILTERS
+# GET BOOKING HISTORY
 @booking.route('/bookings/history', methods=['GET'])
 @jwt_required()
 def get_booking_history():
     user_id = int(get_jwt_identity())
-    query = Booking.query.join(Room).filter(Booking.customer_id == user_id)
+    customer = Customer.query.filter_by(user_id=user_id).first()
+    if not customer:
+        return jsonify({'error': 'Customer not found'}), 404
+
+    query = Booking.query.join(Room).filter(Booking.customer_id == customer.id)
 
     room_type = request.args.get('type')
     start_date_str = request.args.get('start_date')
@@ -128,14 +120,14 @@ def get_booking_history():
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
             query = query.filter(Booking.check_in >= start_date)
         except ValueError:
-            return jsonify({'error': 'Invalid start_date format. Use YYYY-MM-DD'}), 400
+            return jsonify({'error': 'Invalid start_date format'}), 400
 
     if end_date_str:
         try:
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
             query = query.filter(Booking.check_out <= end_date)
         except ValueError:
-            return jsonify({'error': 'Invalid end_date format. Use YYYY-MM-DD'}), 400
+            return jsonify({'error': 'Invalid end_date format'}), 400
 
     paginated = query.paginate(page=page, per_page=per_page, error_out=False)
     bookings = paginated.items
@@ -156,18 +148,21 @@ def get_booking_history():
         ]
     }), 200
 
-
-# MAKE PAYMENT FOR A BOOKING
+# MAKE PAYMENT
 @booking.route('/bookings/<int:booking_id>/pay', methods=['PATCH'])
 @jwt_required()
 def make_payment(booking_id):
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
+    customer = Customer.query.filter_by(user_id=user_id).first()
+    if not customer:
+        return jsonify({'error': 'Customer not found'}), 404
+
     data = request.get_json()
     method = data.get('method')
 
     booking = Booking.query.get_or_404(booking_id)
 
-    if booking.customer_id != user_id:
+    if booking.customer_id != customer.id:
         return jsonify({'error': 'Unauthorized'}), 403
     if booking.status != 'confirmed':
         return jsonify({'error': 'Only confirmed bookings can be paid for'}), 400

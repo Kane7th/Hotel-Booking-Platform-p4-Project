@@ -10,6 +10,10 @@ function BookingPage() {
   const [checkOut, setCheckOut] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [bookingId, setBookingId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState("");
 
   useEffect(() => {
     fetch(`/rooms/${id}`)
@@ -22,10 +26,12 @@ function BookingPage() {
     e.preventDefault();
     setError("");
     setSuccess("");
+    setLoading(true);
 
     const token = localStorage.getItem("token");
     if (!token) {
       setError("You must be logged in to book.");
+      setLoading(false);
       return;
     }
 
@@ -46,10 +52,39 @@ function BookingPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Booking failed");
 
-      setSuccess("Room booked successfully!");
-      setTimeout(() => navigate("/bookings"), 2000);
+      setBookingId(data.booking.id);
+      setSuccess("Room booked successfully! Now you can make a payment.");
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function payNow(bookingId) {
+    const token = localStorage.getItem("token");
+    setPaying(true);
+    setPaymentSuccess("");
+
+    try {
+      const res = await fetch(`/bookings/${bookingId}/pay`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ method: "mobile money" }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Payment failed");
+
+      setPaymentSuccess(data.message);
+      setTimeout(() => navigate("/bookings"), 2000);
+    } catch (err) {
+      alert("❌ " + err.message);
+    } finally {
+      setPaying(false);
     }
   }
 
@@ -68,9 +103,22 @@ function BookingPage() {
         <label>Check-out date:</label>
         <input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} required />
         <br />
-        <button type="submit">Book Now</button>
+        <button type="submit" disabled={loading}>
+          {loading ? "Booking..." : "Book Now"}
+        </button>
       </form>
 
+      {bookingId && (
+        <button
+          style={{ marginTop: "10px" }}
+          onClick={() => payNow(bookingId)}
+          disabled={paying}
+        >
+          {paying ? "Processing Payment..." : "Pay Now"}
+        </button>
+      )}
+
+      {paymentSuccess && <p style={{ color: "green" }}>{paymentSuccess}</p>}
       {error && <p style={{ color: "red" }}>{error}</p>}
       {success && <p style={{ color: "green" }}>{success}</p>}
     </div>
