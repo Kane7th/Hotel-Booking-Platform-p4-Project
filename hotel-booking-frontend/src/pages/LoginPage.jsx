@@ -1,37 +1,43 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-const LoginPage = () => {
-  const { login } = useAuth()
-  const [form, setForm] = useState({ username: '', password: '' })
-  const [error, setError] = useState('')
+export default function LoginPage() {
+  const navigate = useNavigate()
+  const { loginUser } = useAuth()
+
+  const [formData, setFormData] = useState({ email: '', password: '' })
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false)
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
+    setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    try {
-      await login(form)
-    } catch (err) {
-      setError(err.response?.data?.error || 'Login failed')
+    setLoading(true)
+    setError(null)
+
+    const success = await loginUser(formData.email, formData.password)
+    setLoading(false)
+
+    if (success) {
+      navigate('/dashboard')
+    } else {
+      setError('Invalid email or password')
     }
   }
 
   return (
-    <div className="max-w-md mx-auto p-4">
-      <h1 className="text-xl font-bold mb-4">Login</h1>
-      {error && <p className="text-red-500">{error}</p>}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input type="text" name="username" value={form.username} onChange={handleChange} placeholder="Username"
-          className="w-full border px-3 py-2" />
-        <input type="password" name="password" value={form.password} onChange={handleChange} placeholder="Password"
-          className="w-full border px-3 py-2" />
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 w-full">Login</button>
+    <div className="container">
+      <h1>Login</h1>
+      <form onSubmit={handleSubmit}>
+        <input name="email" type="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
+        <input name="password" type="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
+        <button type="submit" disabled={loading}>{loading ? 'Logging in...' : 'Login'}</button>
+        {error && <p style={{ color: 'red' }}>{error}</p>}
       </form>
     </div>
   )
 }
-
-export default LoginPage
