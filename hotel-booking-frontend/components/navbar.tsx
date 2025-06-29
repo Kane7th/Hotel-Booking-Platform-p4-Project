@@ -1,25 +1,23 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { LogOut, User, Home, Calendar, Shield, Bed } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { LogOut, User, Home, Calendar, Shield, Bed, Users } from "lucide-react"
 import ThemeToggle from "./theme-toggle"
 
 export default function Navbar({ user }) {
   const pathname = usePathname()
+  const router = useRouter()
 
   const onLogout = async () => {
-    const token = localStorage.getItem("token")
     try {
-      await fetch("/api/logout", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      })
-    } finally {
       localStorage.removeItem("token")
       localStorage.removeItem("customerToken")
       localStorage.removeItem("customerInfo")
-      window.location.href = "/"
+      router.push("/")
+      window.location.reload() // Force refresh to update user state
+    } catch (error) {
+      console.error("Logout error:", error)
     }
   }
 
@@ -88,18 +86,44 @@ export default function Navbar({ user }) {
                     <span>My Bookings</span>
                   </Link>
 
+                  <Link
+                    href="/change-password"
+                    className={`flex items-center space-x-1 transition-colors duration-200 ${
+                      isActive("/change-password")
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                    }`}
+                  >
+                    <Shield className="h-4 w-4" />
+                    <span>Security</span>
+                  </Link>
+
                   {user.is_admin && (
-                    <Link
-                      href="/admin"
-                      className={`flex items-center space-x-1 transition-colors duration-200 ${
-                        isActive("/admin")
-                          ? "text-blue-600 dark:text-blue-400"
-                          : "text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
-                      }`}
-                    >
-                      <Shield className="h-4 w-4" />
-                      <span>Admin</span>
-                    </Link>
+                    <>
+                      <Link
+                        href="/admin"
+                        className={`flex items-center space-x-1 transition-colors duration-200 ${
+                          isActive("/admin")
+                            ? "text-blue-600 dark:text-blue-400"
+                            : "text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                        }`}
+                      >
+                        <Users className="h-4 w-4" />
+                        <span>Admin</span>
+                      </Link>
+
+                      <Link
+                        href="/admin/rooms"
+                        className={`flex items-center space-x-1 transition-colors duration-200 ${
+                          isActive("/admin/rooms")
+                            ? "text-blue-600 dark:text-blue-400"
+                            : "text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                        }`}
+                      >
+                        <Bed className="h-4 w-4" />
+                        <span>Manage Rooms</span>
+                      </Link>
+                    </>
                   )}
                 </>
               )}
@@ -110,9 +134,14 @@ export default function Navbar({ user }) {
             <ThemeToggle />
             {user ? (
               <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
                   Welcome, <span className="font-medium text-gray-900 dark:text-gray-100">{user.username}</span>
-                </span>
+                  {user.is_admin && (
+                    <span className="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400">
+                      Admin
+                    </span>
+                  )}
+                </div>
                 <button
                   onClick={onLogout}
                   className="flex items-center space-x-1 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 px-3 py-2 rounded-lg transition-colors duration-200"
