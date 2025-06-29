@@ -74,10 +74,9 @@ def delete_customer(id):
 @customer.route('/customer/profile', methods=['GET'])
 @jwt_required()
 def get_customer_profile():
-    from flask_jwt_extended import get_jwt_identity
-    user_id = int(get_jwt_identity())
+    customer_id = int(get_jwt_identity())  
 
-    customer = Customer.query.filter_by(user_id=user_id).first()
+    customer = Customer.query.get(customer_id)
     if not customer:
         return jsonify({'error': 'Customer profile not found'}), 404
 

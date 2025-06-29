@@ -3,7 +3,6 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from app.models import Customer, db
 from app.utils.auth_helpers import admin_required
 
-
 customer_auth = Blueprint('customer_auth', __name__)
 
 # Register a new customer
@@ -37,7 +36,8 @@ def login_customer():
     if not customer:
         return jsonify({'error': 'Invalid credentials'}), 401
 
-    token = create_access_token(identity=customer.id)
+    token = create_access_token(identity=str(customer.id))
+
     return jsonify({
         'token': token,
         'customer': {
@@ -52,7 +52,11 @@ def login_customer():
 @customer_auth.route('/customer/profile', methods=['GET'])
 @jwt_required()
 def customer_profile():
-    customer_id = get_jwt_identity()
+    try:
+        customer_id = int(get_jwt_identity())
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid token'}), 422
+
     customer = Customer.query.get(customer_id)
     if not customer:
         return jsonify({'error': 'Customer not found'}), 404
