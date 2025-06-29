@@ -27,10 +27,14 @@ import AdminPaymentsPage         from './pages/AdminPaymentsPage';
 import AdminBookingPaymentsPage  from './pages/AdminBookingPaymentsPage';
 import AdminRoomsPage            from './pages/AdminRoomsPage';
 import RoomFormPage              from './pages/RoomFormPage';
+import Navbar                    from './components/Navbar';
 
 export default function AppRoutes() {
   return (
     <Routes>
+      {/* Navbar */}
+      <Route path="/navbar" element={<Navbar />} />
+
       {/* Public routes */}
       <Route path="/login"                element={<LoginPage />} />
       <Route path="/register"             element={<RegisterPage />} />
@@ -57,6 +61,8 @@ export default function AppRoutes() {
 
       {/* Admin‑only */}
       <Route element={<ProtectedRoute adminOnly />}>
+        <Route path="/admin/register"                element={<RegisterPage />} />
+        <Route path="/admin/login"                 element={<LoginPage />} />
         <Route path="/admin"                       element={<AdminDashboard />} />
         <Route path="/admin/customers"             element={<AdminCustomersPage />} />
         <Route path="/admin/customers/:id"         element={<AdminCustomerDetailPage />} />

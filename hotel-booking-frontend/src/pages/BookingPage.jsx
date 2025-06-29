@@ -32,7 +32,7 @@ export default function BookingPage() {
 
     try {
       const res = await fetch('/api/bookings', {
-        method: 'POST',
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
