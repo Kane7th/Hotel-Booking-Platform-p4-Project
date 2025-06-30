@@ -32,7 +32,7 @@ export default function Navbar({ user }) {
           <div className="flex items-center space-x-8">
             <Link href="/" className="flex items-center space-x-2 text-xl font-bold text-blue-600 dark:text-blue-400">
               <Home className="h-6 w-6" />
-              <span>HotelBooking</span>
+              <span>ChateauCore</span>
             </Link>
 
             <div className="hidden md:flex items-center space-x-6">

@@ -13,7 +13,7 @@ export default function AdminDashboard() {
 
     // Fetch overview stats
     fetch("/api/admin/overview", {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     })
       .then((res) => res.json())
       .then((data) => setStats(data))
@@ -21,7 +21,7 @@ export default function AdminDashboard() {
 
     // Fetch users
     fetch("/api/customers", {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     })
       .then((res) =>
         res.json().then((data) => {
@@ -39,7 +39,7 @@ export default function AdminDashboard() {
     try {
       const res = await fetch(url, {
         method: "PATCH",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)

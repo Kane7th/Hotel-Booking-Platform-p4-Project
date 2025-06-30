@@ -17,7 +17,7 @@ export default function CustomerProfilePage() {
 
   useEffect(() => {
     fetch("/api/customer/profile", {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     })
       .then(async (r) => {
         if (!r.ok) {
@@ -92,7 +92,7 @@ export default function CustomerProfilePage() {
     try {
       const res = await fetch(`/api/customer/${customer.id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       })
       if (res.ok) {
         localStorage.removeItem("customerToken")

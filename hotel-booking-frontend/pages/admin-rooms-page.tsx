@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useRouter } from "next/navigation"  
 import { Plus, Edit, Trash2, Bed } from "lucide-react"
 
 export default function AdminRoomsPage() {
@@ -9,12 +9,12 @@ export default function AdminRoomsPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(true)
   const [deleteLoading, setDeleteLoading] = useState(null)
-  const navigate = useNavigate()
+  const router = useRouter()  
 
   useEffect(() => {
     const t = localStorage.getItem("token")
     fetch("/rooms", {
-      headers: { Authorization: `Bearer ${t}` },
+      headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json"  },
     })
       .then(async (res) => {
         if (!res.ok) throw new Error((await res.json()).error || res.status)
@@ -32,7 +32,7 @@ export default function AdminRoomsPage() {
     try {
       const res = await fetch(`/api/rooms/${id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${t}` },
+        headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
       })
       if (!res.ok) throw new Error((await res.json()).error || res.status)
       setRooms((rs) => rs.filter((r) => r.id !== id))
@@ -63,7 +63,7 @@ export default function AdminRoomsPage() {
             <p className="text-gray-600">Add, edit, and manage hotel rooms</p>
           </div>
           <button
-            onClick={() => navigate("/admin/rooms/new")}
+            onClick={() => router.push("/admin/rooms/new")}  
             className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -126,7 +126,7 @@ export default function AdminRoomsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                       <button
-                        onClick={() => navigate(`/admin/rooms/${r.id}/edit`)}
+                        onClick={() => router.push(`/admin/rooms/${r.id}/edit`)}  // Changed from navigate
                         className="flex items-center text-blue-600 hover:text-blue-900"
                       >
                         <Edit className="h-4 w-4 mr-1" />
