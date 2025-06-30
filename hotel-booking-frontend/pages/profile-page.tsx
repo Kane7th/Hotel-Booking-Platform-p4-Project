@@ -1,41 +1,29 @@
 "use client";
-
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { apiService } from "../services/api";
 import { User, Mail, Shield, Clock, Edit } from "lucide-react";
 import Link from "next/link";
 
 export default function ProfilePage() {
-  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      setError("Not logged in");
-      setLoading(false);
-      return;
-    }
-
-    fetch("/api/profile", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    })
-      .then(async (res) => {
-        const contentType = res.headers.get("content-type");
-        const data =
-          contentType && contentType.includes("application/json")
-            ? await res.json()
-            : { error: "Server returned non-JSON response" };
-
-        if (!res.ok) throw new Error(data.error || "Failed to fetch profile");
+    const fetchProfile = async () => {
+      try {
+        setLoading(true); // Set loading to true when starting fetch
+        const data = await apiService.getProfile();
         setUser(data);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+      } catch (err) {
+        setError(err.message || "Failed to load profile");
+      } finally {
+        setLoading(false); // Set loading to false when done
+      }
+    };
+
+    fetchProfile();
   }, []);
 
   if (loading) {

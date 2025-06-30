@@ -17,6 +17,63 @@ class ApiService {
     return response.json()
   }
 
+  private async refreshToken() {
+    try {
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (!refreshToken) throw new Error("No refresh token");
+      
+      const response = await fetch(`${API_BASE_URL}/api/refresh-token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+      
+      const { token, refresh_token } = await response.json();
+      localStorage.setItem("token", token);
+      localStorage.setItem("refreshToken", refresh_token);
+      return token;
+    } catch (error) {
+      this.clearAuth();
+      throw error;
+    }
+  }
+
+  private clearAuth() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    window.location.href = "/login";
+  }
+
+  private async authFetch(input: RequestInfo, init?: RequestInit): Promise<Response> {
+    let token = localStorage.getItem("token");
+    let response = await fetch(input, {
+      ...init,
+      headers: {
+        ...init?.headers,
+        ...this.getAuthHeaders(),
+      },
+    });
+
+    // Token expired - try refresh
+    if (response.status === 401) {
+      try {
+        token = await this.refreshToken();
+        response = await fetch(input, {
+          ...init,
+          headers: {
+            ...init?.headers,
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      } catch (refreshError) {
+        this.clearAuth();
+        throw refreshError;
+      }
+    }
+
+    return response;
+  }
+
   // Authentication
   async login(credentials: { username: string; password: string }) {
     const response = await fetch(`${API_BASE_URL}/api/login`, {
@@ -37,10 +94,17 @@ class ApiService {
   }
 
   async getProfile() {
-    const response = await fetch(`${API_BASE_URL}/api/profile`, {
-      headers: this.getAuthHeaders(),
-    })
-    return this.handleResponse(response)
+    try {
+      const response = await this.authFetch(`${API_BASE_URL}/api/profile`);
+      return this.handleResponse(response);
+    } catch (error) {
+      console.error("Profile fetch failed:", error);
+      throw new Error(
+        error instanceof Error 
+          ? error.message 
+          : "Failed to load profile"
+      );
+    }
   }
 
   async changePassword(passwords: { old_password: string; new_password: string }) {
