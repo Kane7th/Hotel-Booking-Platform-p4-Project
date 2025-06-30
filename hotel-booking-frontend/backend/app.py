@@ -21,8 +21,7 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 # Initialize extensions
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
-
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 # Error Handlers
 @jwt.invalid_token_loader
