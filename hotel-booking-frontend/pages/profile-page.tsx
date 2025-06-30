@@ -1,35 +1,42 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { User, Mail, Shield, Clock, Edit } from "lucide-react"
-import { Link } from "react-router-dom"
+import { useState, useEffect } from "react";
+import { User, Mail, Shield, Clock, Edit } from "lucide-react";
+import Link from "next/link";
 
 export default function ProfilePage() {
-  const [user, setUser] = useState(null)
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("token");
 
     if (!token) {
-      setError("Not logged in")
-      setLoading(false)
-      return
+      setError("Not logged in");
+      setLoading(false);
+      return;
     }
 
     fetch("/api/profile", {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     })
-      .then((res) =>
-        res.json().then((data) => {
-          if (!res.ok) throw new Error(data.error || "Failed to fetch profile")
-          setUser(data)
-        }),
-      )
+      .then(async (res) => {
+        const contentType = res.headers.get("content-type");
+        const data =
+          contentType && contentType.includes("application/json")
+            ? await res.json()
+            : { error: "Server returned non-JSON response" };
+
+        if (!res.ok) throw new Error(data.error || "Failed to fetch profile");
+        setUser(data);
+      })
       .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
-  }, [])
+      .finally(() => setLoading(false));
+  }, []);
 
   if (loading) {
     return (
@@ -39,7 +46,7 @@ export default function ProfilePage() {
           <p className="mt-4 text-gray-600">Loading profile...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -49,7 +56,7 @@ export default function ProfilePage() {
           <p className="text-red-600">{error}</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!user) {
@@ -59,7 +66,7 @@ export default function ProfilePage() {
           <p className="text-gray-600">User not found</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -85,7 +92,9 @@ export default function ProfilePage() {
                 <div className="flex items-center p-4 bg-gray-50 rounded-lg">
                   <User className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Username</p>
+                    <p className="text-sm font-medium text-gray-500">
+                      Username
+                    </p>
                     <p className="text-lg text-gray-900">{user.username}</p>
                   </div>
                 </div>
@@ -93,7 +102,9 @@ export default function ProfilePage() {
                 <div className="flex items-center p-4 bg-gray-50 rounded-lg">
                   <Mail className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Email Address</p>
+                    <p className="text-sm font-medium text-gray-500">
+                      Email Address
+                    </p>
                     <p className="text-lg text-gray-900">{user.email}</p>
                   </div>
                 </div>
@@ -101,11 +112,15 @@ export default function ProfilePage() {
                 <div className="flex items-center p-4 bg-gray-50 rounded-lg">
                   <Shield className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Account Type</p>
+                    <p className="text-sm font-medium text-gray-500">
+                      Account Type
+                    </p>
                     <div className="flex items-center mt-1">
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          user.is_admin ? "bg-purple-100 text-purple-800" : "bg-gray-100 text-gray-800"
+                          user.is_admin
+                            ? "bg-purple-100 text-purple-800"
+                            : "bg-gray-100 text-gray-800"
                         }`}
                       >
                         {user.is_admin ? "Administrator" : "Regular User"}
@@ -117,15 +132,19 @@ export default function ProfilePage() {
                 <div className="flex items-center p-4 bg-gray-50 rounded-lg">
                   <Clock className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Last Login</p>
-                    <p className="text-lg text-gray-900">{user.last_login || "Never"}</p>
+                    <p className="text-sm font-medium text-gray-500">
+                      Last Login
+                    </p>
+                    <p className="text-lg text-gray-900">
+                      {user.last_login || "Never"}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="pt-6 border-t border-gray-200">
                 <Link
-                  to="/change-password"
+                  href="/change-password" 
                   className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
                 >
                   <Edit className="h-4 w-4 mr-2" />
@@ -137,5 +156,5 @@ export default function ProfilePage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

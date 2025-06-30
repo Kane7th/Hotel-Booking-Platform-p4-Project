@@ -1,3 +1,4 @@
+from importlib import resources
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
@@ -21,7 +22,25 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 # Initialize extensions
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
-CORS(app)
+CORS(
+    app,
+    resources={r"/api/*": {"origins": "*"}},
+    allow_headers=["Content-Type", "Authorization"],
+    expose_headers=["Authorization"]
+)
+
+
+# Error Handlers
+@jwt.invalid_token_loader
+def invalid_token_callback(error):
+    print(f"Invalid token: {error}")
+    return jsonify({'error': 'Invalid token'}), 422
+
+@jwt.unauthorized_loader
+def missing_token_callback(error):
+    print(f"Missing token: {error}")
+    return jsonify({'error': 'Missing token'}), 401
+
 
 # Database Models
 class User(db.Model):
@@ -145,7 +164,7 @@ def register():
         db.session.commit()
         
         # Create access token
-        access_token = create_access_token(identity=user.id)
+        access_token = create_access_token(identity=str(user.id))
         
         return jsonify({
             'token': access_token,
@@ -170,7 +189,7 @@ def login():
             user.last_login = datetime.utcnow()
             db.session.commit()
             
-            access_token = create_access_token(identity=user.id)
+            access_token = create_access_token(identity=str(user.id))
             return jsonify({
                 'token': access_token,
                 'user': user.to_dict()

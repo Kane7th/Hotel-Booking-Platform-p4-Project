@@ -5,11 +5,21 @@ import Link from "next/link"
 import { Calendar, MapPin, CreditCard, X, CheckCircle, Clock } from "lucide-react"
 import { apiService } from "../services/api"
 
+type Booking = {
+  id: number
+  room_id: number
+  check_in: string
+  check_out: string
+  status: "confirmed" | "cancelled" | "paid" | "pending" | string
+  total_amount?: number
+  // add other fields as needed
+}
+
 export default function BookingsListPage() {
-  const [bookings, setBookings] = useState([])
+  const [bookings, setBookings] = useState<Booking[]>([])
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(true)
-  const [actionLoading, setActionLoading] = useState(null)
+  const [actionLoading, setActionLoading] = useState<number | null>(null)
 
   useEffect(() => {
     apiService

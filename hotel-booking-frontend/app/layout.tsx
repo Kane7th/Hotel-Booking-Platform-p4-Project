@@ -6,7 +6,7 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Hotel Booking System",
+  title: "ChateauCore: Hotel Booking System",
   description: "A modern hotel booking and management system",
 }
 
@@ -16,8 +16,17 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body 
+        className={inter.className}
+        suppressHydrationWarning
+        data-gramm="false" 
+        data-gramm_editor="false"
+        data-new-gr-c-s-check-loaded="false"
+        data-gr-ext-installed="false"
+      >
+        {children}
+      </body>
     </html>
   )
 }
