@@ -133,15 +133,6 @@ Key functionalities include:
    npm start
    ```
 
-## Configuration
-
-### Environment Variables
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `DATABASE_URL` | Database connection URL | `postgresql://user:pass@localhost/dbname` |
-| `JWT_SECRET_KEY` | Secret key for JWT tokens | `your-secret-key-here` |
-| `FLASK_ENV` | Flask environment | `development` or `production` |
-
 ### Database Initialization
 The system comes with sample data that can be loaded by running:
 ```bash
