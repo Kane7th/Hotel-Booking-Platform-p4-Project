@@ -1,4 +1,3 @@
-from importlib import resources
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
@@ -22,12 +21,7 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 # Initialize extensions
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
-CORS(
-    app,
-    resources={r"/api/*": {"origins": "*"}},
-    allow_headers=["Content-Type", "Authorization"],
-    expose_headers=["Authorization"]
-)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 
 # Error Handlers

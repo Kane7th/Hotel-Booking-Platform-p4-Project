@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 class ApiService {
   private getAuthHeaders() {
@@ -10,24 +10,34 @@ class ApiService {
   }
 
   private async handleResponse(response: Response) {
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: "Network error" }))
-      throw new Error(error.error || `HTTP ${response.status}`)
+    const contentType = response.headers.get('content-type');
+
+    // Handle non-JSON responses
+    if (!contentType?.includes('application/json')) {
+      const text = await response.text();
+      throw new Error(`Expected JSON, got: ${contentType} - ${text.substring(0, 100)}`);
     }
-    return response.json()
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || `HTTP ${response.status}`);
+    }
+
+    return data;
   }
 
   private async refreshToken() {
     try {
       const refreshToken = localStorage.getItem("refreshToken");
       if (!refreshToken) throw new Error("No refresh token");
-      
+
       const response = await fetch(`${API_BASE_URL}/api/refresh-token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh_token: refreshToken }),
       });
-      
+
       const { token, refresh_token } = await response.json();
       localStorage.setItem("token", token);
       localStorage.setItem("refreshToken", refresh_token);
@@ -100,8 +110,8 @@ class ApiService {
     } catch (error) {
       console.error("Profile fetch failed:", error);
       throw new Error(
-        error instanceof Error 
-          ? error.message 
+        error instanceof Error
+          ? error.message
           : "Failed to load profile"
       );
     }
@@ -137,6 +147,22 @@ class ApiService {
 
   async getCustomerProfile() {
     const response = await fetch(`${API_BASE_URL}/api/customer/profile`, {
+      headers: this.getAuthHeaders(),
+    })
+    return this.handleResponse(response)
+  }
+
+  async getCustomerById(customerId:
+  number) {
+      const response = await fetch(`${API_BASE_URL}/api/customer/${customerId}`, {
+        headers: this.getAuthHeaders(),
+      })
+      return this.handleResponse(response)
+    }
+    
+  async deleteCustomer(customerId: number) {
+    const response = await fetch(`${API_BASE_URL}/api/customer/${customerId}`, {
+      method: "DELETE",
       headers: this.getAuthHeaders(),
     })
     return this.handleResponse(response)
@@ -228,18 +254,24 @@ class ApiService {
   }
 
   // Admin API
-  async getCustomers() {
-    const response = await fetch(`${API_BASE_URL}/api/customers`, {
-      headers: this.getAuthHeaders(),
-    })
-    return this.handleResponse(response)
+  async getAdminOverview() {
+    try {
+      const response = await this.authFetch(`${API_BASE_URL}/api/admin/overview`);
+      return this.handleResponse(response);
+    } catch (error) {
+      console.error('Failed to fetch admin overview:', error);
+      throw error;
+    }
   }
 
-  async getAdminOverview() {
-    const response = await fetch(`${API_BASE_URL}/api/admin/overview`, {
-      headers: this.getAuthHeaders(),
-    })
-    return this.handleResponse(response)
+  async getCustomers() {
+    try {
+      const response = await this.authFetch(`${API_BASE_URL}/customers`);
+      return this.handleResponse(response);
+    } catch (error) {
+      console.error('Failed to fetch customers:', error);
+      throw error;
+    }
   }
 
   async promoteUser(userId: number) {
